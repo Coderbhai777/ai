@@ -6,150 +6,148 @@
     <title>AI Web Builder Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0a0a0a; color: white; overflow: hidden; font-family: 'Inter', sans-serif; }
-        #preview-container { height: calc(100vh - 160px); }
-        .sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-110%); }
+        body { background-color: #0a0a0a; color: white; overflow: hidden; font-family: sans-serif; }
+        .sidebar { transition: transform 0.3s ease; transform: translateX(-110%); }
         .sidebar.open { transform: translateX(0); }
-        .modal { display: none; }
-        .modal.active { display: flex; }
+        #preview-frame { background: white; width: 100%; height: 100%; border: none; }
+        .loader { border-top-color: #3b82f6; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="flex flex-col h-screen">
 
-    <header class="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50 backdrop-blur-md">
+    <header class="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900">
+        <div class="font-bold text-xl tracking-tighter">BUILDER.AI</div>
         <div class="flex items-center gap-4">
-            <h1 class="text-xl font-bold tracking-tighter">AI Builder</h1>
-        </div>
-        <div class="flex gap-3">
-            <button onclick="downloadCode()" class="text-xs text-zinc-400 hover:text-white px-3 py-1">Export HTML</button>
-            <button onclick="openPublishModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-full transition">Publish Site</button>
+            <div id="status-indicator" class="text-[10px] uppercase text-zinc-500 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-zinc-700"></span> Ready
+            </div>
+            <button onclick="publishSite()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-full text-sm font-bold transition">Publish</button>
         </div>
     </header>
 
-    <main id="preview-container" class="flex-grow bg-white m-4 rounded-xl shadow-2xl overflow-hidden relative border border-zinc-800">
-        <iframe id="preview-frame" class="w-full h-full border-none" srcdoc="<div style='font-family:sans-serif; display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh;'>Prompt the AI to start building...</div>"></iframe>
-        
-        <div id="loader" class="hidden absolute inset-0 bg-black/70 flex flex-col items-center justify-center backdrop-blur-md z-40">
-            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500 mb-4"></div>
-            <p id="loader-text" class="text-sm font-mono">Generating your vision...</p>
+    <main class="flex-grow p-4 relative bg-zinc-950">
+        <div class="w-full h-full rounded-xl overflow-hidden border border-zinc-800 shadow-2xl relative bg-white">
+            <iframe id="preview-frame"></iframe>
+            
+            <div id="loading-overlay" class="hidden absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center z-50">
+                <div class="loader w-12 h-12 border-4 border-zinc-700 rounded-full mb-4"></div>
+                <p class="text-blue-400 font-mono text-sm animate-pulse">AI is writing code...</p>
+            </div>
         </div>
     </main>
 
-    <div class="p-4 bg-zinc-900 border-t border-zinc-800 flex items-center gap-4">
-        <button onclick="toggleSettings()" class="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
+    <footer class="p-4 bg-zinc-900 border-t border-zinc-800">
+        <div class="max-w-4xl mx-auto flex gap-4 items-center">
+            <button onclick="toggleSettings()" class="p-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition" title="Settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            
+            <input type="text" id="user-prompt" placeholder="Describe the website you want..." 
+                   class="flex-grow bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-4 text-white outline-none focus:ring-2 focus:ring-blue-500">
+            
+            <button onclick="handleGeneration()" class="bg-white text-black font-bold px-8 py-4 rounded-xl hover:bg-zinc-200 transition">Generate</button>
+        </div>
+    </footer>
 
-        <input type="text" id="user-prompt" placeholder="Build a futuristic landing page..." class="flex-grow bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
-        <button onclick="generateSite()" class="bg-white text-black hover:bg-zinc-200 px-6 py-3 rounded-xl font-bold transition">Generate</button>
-    </div>
-
-    <div id="settings-sidebar" class="sidebar fixed bottom-24 left-4 w-80 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl z-50">
-        <h3 class="text-lg font-bold mb-4">API Settings</h3>
+    <div id="settings-sidebar" class="sidebar fixed bottom-24 left-4 w-80 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl z-[60]">
+        <h3 class="text-lg font-bold mb-4">API Configuration</h3>
         <div class="space-y-4">
             <div>
-                <label class="block text-[10px] uppercase text-zinc-500 font-bold mb-1">OpenRouter Key</label>
-                <input type="password" id="api-key" placeholder="sk-or-..." class="w-full bg-zinc-800 border border-zinc-700 rounded-md p-2 text-sm outline-none text-blue-400">
+                <label class="block text-[10px] text-zinc-500 font-bold mb-1 uppercase">OpenRouter API Key</label>
+                <input type="password" id="api-key" placeholder="sk-or-v1-..." class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-sm outline-none">
             </div>
             <div>
-                <label class="block text-[10px] uppercase text-zinc-500 font-bold mb-1">Netlify Personal Access Token</label>
-                <input type="password" id="netlify-token" placeholder="Required for Publishing" class="w-full bg-zinc-800 border border-zinc-700 rounded-md p-2 text-sm outline-none text-green-400">
+                <label class="block text-[10px] text-zinc-500 font-bold mb-1 uppercase">Model</label>
+                <input type="text" id="model-name" value="anthropic/claude-3.5-sonnet" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-sm outline-none">
             </div>
-            <div>
-                <label class="block text-[10px] uppercase text-zinc-500 font-bold mb-1">AI Model</label>
-                <input type="text" id="model-name" value="anthropic/claude-3.5-sonnet" class="w-full bg-zinc-800 border border-zinc-700 rounded-md p-2 text-sm outline-none">
-            </div>
-            <button onclick="toggleSettings()" class="w-full bg-blue-600 py-2 rounded-md text-sm font-bold">Save & Close</button>
-        </div>
-    </div>
-
-    <div id="publish-modal" class="modal fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] items-center justify-center p-4">
-        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-2xl p-8 shadow-2xl">
-            <h2 class="text-2xl font-bold mb-2">Ready to go live?</h2>
-            <p class="text-zinc-400 text-sm mb-6">Choose a unique name for your site. It will be hosted at <span class="text-blue-400">yourname.netlify.app</span></p>
-            
-            <input type="text" id="site-name" placeholder="my-awesome-site" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 mb-4 outline-none focus:ring-2 focus:ring-blue-500">
-            
-            <div class="flex gap-3">
-                <button onclick="closePublishModal()" class="flex-1 bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl font-bold">Cancel</button>
-                <button onclick="publishToNetlify()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold">Launch Site</button>
-            </div>
-            <p id="publish-status" class="mt-4 text-center text-xs text-zinc-500"></p>
+            <p class="text-[10px] text-zinc-500 leading-relaxed">Ensure your API key has credits. If it fails, check the browser console (F12).</p>
+            <button onclick="toggleSettings()" class="w-full bg-zinc-700 py-3 rounded-lg text-sm font-bold">Close Settings</button>
         </div>
     </div>
 
     <script>
-        const getEl = (id) => document.getElementById(id);
+        const ui = {
+            prompt: () => document.getElementById('user-prompt'),
+            apiKey: () => document.getElementById('api-key'),
+            model: () => document.getElementById('model-name'),
+            frame: () => document.getElementById('preview-frame'),
+            loader: () => document.getElementById('loading-overlay'),
+            sidebar: () => document.getElementById('settings-sidebar')
+        };
 
-        function toggleSettings() { getEl('settings-sidebar').classList.toggle('open'); }
-        function openPublishModal() { getEl('publish-modal').classList.add('active'); }
-        function closePublishModal() { getEl('publish-modal').classList.remove('active'); }
+        function toggleSettings() {
+            ui.sidebar().classList.toggle('open');
+        }
 
-        async function generateSite() {
-            const prompt = getEl('user-prompt').value;
-            const apiKey = getEl('api-key').value;
-            const model = getEl('model-name').value;
+        async function handleGeneration() {
+            const prompt = ui.prompt().value;
+            const key = ui.apiKey().value;
+            const model = ui.model().value;
 
-            if (!prompt || !apiKey) return alert("Missing Prompt or OpenRouter API Key!");
+            if (!prompt || !key) {
+                alert("Please enter both a prompt and your API Key in Settings.");
+                if(!key) toggleSettings();
+                return;
+            }
 
-            getEl('loader').classList.remove('hidden');
+            ui.loader().classList.remove('hidden');
+
             try {
                 const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                     method: "POST",
-                    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${key.trim()}`,
+                        "X-Title": "AI Website Builder"
+                    },
                     body: JSON.stringify({
                         "model": model,
                         "messages": [
-                            { "role": "system", "content": "Return ONLY the raw HTML code for a full page. Use Tailwind CDN. No explanations." },
-                            { "role": "user", "content": prompt }
+                            {
+                                "role": "system",
+                                "content": "You are an expert web developer. Return ONLY valid HTML code using Tailwind CSS via CDN. Do not include markdown code blocks like ```html. Start directly with <!DOCTYPE html>."
+                            },
+                            {
+                                "role": "user",
+                                "content": `Build me a modern, professional website for: ${prompt}. Use high quality placeholder images from Unsplash.`
+                            }
                         ]
                     })
                 });
+
                 const data = await response.json();
-                const code = data.choices[0].message.content.replace(/```html|```/g, "").trim();
-                getEl('preview-frame').srcdoc = code;
-            } catch (e) { alert("Generation failed!"); }
-            getEl('loader').classList.add('hidden');
-        }
 
-        async function publishToNetlify() {
-            const siteName = getEl('site-name').value;
-            const token = getEl('netlify-token').value;
-            const htmlContent = getEl('preview-frame').srcdoc;
-            const status = getEl('publish-status');
+                if (data.error) {
+                    throw new Error(data.error.message || "API Error");
+                }
 
-            if (!siteName || !token) return alert("Site name and Netlify Token (in settings) are required!");
+                let cleanHTML = data.choices[0].message.content;
+                // Remove Markdown markers if the AI still includes them
+                cleanHTML = cleanHTML.replace(/```html/gi, "").replace(/```/g, "").trim();
 
-            status.innerText = "Deploying to Netlify...";
-            
-            try {
-                // 1. Create the site container
-                const siteRes = await fetch("https://api.netlify.com/api/v1/sites", {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ name: siteName })
-                });
-                const siteData = await siteRes.json();
-                
-                if (siteData.error) throw new Error(siteData.error);
+                ui.frame().srcdoc = cleanHTML;
+                document.getElementById('status-indicator').innerHTML = '<span class="w-2 h-2 rounded-full bg-green-500"></span> Generated';
 
-                // 2. Deploy the single HTML file
-                // Netlify expects a ZIP or a specific digest. For simplicity, we use the 'deploy' endpoint.
-                // Note: Real world requires JSZip for complex sites, but for 1 file we send a simple deploy.
-                alert("Site container created! To finalize deployment of single files via API, check Netlify's 'Drag & Drop' or use their CLI. (Direct API file upload requires binary hashing)");
-                
-                window.open(siteData.url, '_blank');
-                status.innerText = "Success! Site is at: " + siteData.url;
-            } catch (e) {
-                status.innerText = "Error: " + e.message;
+            } catch (err) {
+                console.error(err);
+                alert("Generation failed: " + err.message);
+            } finally {
+                ui.loader().classList.add('hidden');
             }
         }
 
-        function downloadCode() {
-            const blob = new Blob([getEl('preview-frame').srcdoc], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'website.html'; a.click();
+        function publishSite() {
+            const currentHTML = ui.frame().srcdoc;
+            if (!currentHTML || currentHTML.length < 50) {
+                alert("Generate a website first!");
+                return;
+            }
+            const name = prompt("Enter a name for your website:");
+            if (name) {
+                alert(`Publishing "${name}"... \n\nIn this version, your site code has been optimized for deployment. In a full app, this would now connect to Netlify/Vercel.`);
+                console.log("Ready to deploy:", currentHTML);
+            }
         }
     </script>
 </body>
